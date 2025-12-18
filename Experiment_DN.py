@@ -56,19 +56,10 @@ def load_s21(filename, freq_index):
 S21_x = load_s21('rupor6_Probe_X.s2p', freq)
 S21_y = load_s21('rupor6_Probe_Y.s2p', freq)
 
-# print(S21_x)
-# print(S21_y)
-
 # Ресэмплинг данных на регулярную сетку
 X, Y = np.meshgrid(x_regular, y_regular)
 E_x = np.zeros((n_y, n_x), dtype=complex)
 E_y = np.zeros((n_y, n_x), dtype=complex)
-
-# print(X)
-# print(Y)
-# print(E_x)
-# print(E_y)
-
 
 points = np.column_stack((x_coords, y_coords))
 values_x = S21_x
@@ -77,9 +68,6 @@ E_x = griddata(points, values_x, (X, Y), method='cubic', fill_value=0+0j)
 # Интерполяция для вертикальной поляризации
 values_y = S21_y
 E_y = griddata(points, values_y, (X, Y), method='cubic', fill_value=0+0j)
-
-# print(E_x)
-# print(E_y)
 
 def calculate_angular_spectrum(E_near, dx, dy, k, z_scan=0.06):
     """
@@ -118,17 +106,9 @@ def calculate_angular_spectrum(E_near, dx, dy, k, z_scan=0.06):
 
     E_spectral_corrected = E_spectral * np.exp(-1j * kz * z_scan)
 
-
-    #Отображение (kx, ky) -> (θ, φ)
-    # Стандартное сферическое преобразование:
-    # kx = k * sinθ * cosφ
-    # ky = k * sinθ * sinφ
-    # kz = k * cosθ
-
     k_rho = np.sqrt(KX ** 2 + KY ** 2 + 1e-12)  # избегаем деления на 0
 
     # Угол места: θ ∈ [-90°, 90°]
-    # sinθ = k_rho / k
     sin_theta = k_rho / k
     sin_theta_clipped = np.clip(sin_theta, -1.0, 1.0)
 
@@ -156,26 +136,6 @@ plt.imshow(np.abs(F_x), extent=[phi.min(), phi.max(), theta.min(), theta.max()],
 plt.colorbar()
 plt.title('F_x magnitude')
 plt.show()
-# np.savetxt('theta.txt', theta,
-#            fmt='%.6f', delimiter=' ', header='Theta matrix')
-# np.savetxt('phi.txt', phi,
-#            fmt='%.6f', delimiter=' ', header='phi matrix')
-# np.savetxt('P_theta.txt', Probe_theta,
-#            fmt='%.6f', delimiter=' ', header='Theta matrix')
-# np.savetxt('P_phi.txt', Probe_phi,
-#            fmt='%.6f', delimiter=' ', header='phi matrix')
-# print(F_x.shape, F_y.shape)
-# print(theta.min(), theta.max(), theta.shape)
-# print(phi.min(), phi.max(), phi.shape)
-# print(f"Probe_phi shape: {Probe_phi.shape}")
-# print(f"Probe_theta shape: {Probe_theta.shape}")
-# print(f"Probe_RP_theta_Xpol shape: {Probe_RP_theta_Xpol.shape}")
-
-# Проверка диапазонов углов
-# print(f"Probe phi range: [{Probe_phi.min():.1f}, {Probe_phi.max():.1f}]")
-# print(f"Probe theta range: [{Probe_theta.min():.1f}, {Probe_theta.max():.1f}]")
-# print(f"FFT phi range: [{phi.min():.1f}, {phi.max():.1f}]")
-# print(f"FFT theta range: [{theta.min():.1f}, {theta.max():.1f}]")
 
 plt.figure()
 plt.imshow(np.abs(Probe_RP_theta_Xpol),  extent=[Probe_phi.min(), Probe_phi.max(), Probe_theta.min(), Probe_theta.max()],
@@ -198,28 +158,6 @@ plt.imshow(np.abs(Probe_RP_phi_Ypol),  extent=[Probe_phi.min(), Probe_phi.max(),
 plt.colorbar()
 plt.title('Probe RP_phi Y polarization')
 plt.show()
-# def expand_probe_data_symmetric():
-#     # Исходные данные: Probe_theta, Probe_phi, Probe_RP_... в диапазоне φ: [-90, 90]
-#
-#     # Создаем расширенные массивы
-#     theta_full = np.concatenate([Probe_theta, Probe_theta])
-#     phi_full = np.concatenate([Probe_phi, -Probe_phi])  # отражение
-#
-#     # Значения для отраженной полусферы (используем комплексное сопряжение для сохранения фазы)
-#     # Для многих зондов E(θ, -φ) = E(θ, φ)*
-#     RP_theta_Xpol_full = np.concatenate([Probe_RP_theta_Xpol, np.conj(Probe_RP_theta_Xpol)])
-#     RP_phi_Xpol_full = np.concatenate([Probe_RP_phi_Xpol, np.conj(Probe_RP_phi_Xpol)])
-#     RP_theta_Ypol_full = np.concatenate([Probe_RP_theta_Ypol, np.conj(Probe_RP_theta_Ypol)])
-#     RP_phi_Ypol_full = np.concatenate([Probe_RP_phi_Ypol, np.conj(Probe_RP_phi_Ypol)])
-#
-#     return theta_full, phi_full, RP_theta_Xpol_full, RP_phi_Xpol_full, RP_theta_Ypol_full, RP_phi_Ypol_full
-#
-#
-# # Расширяем данные
-# (theta_full, phi_full,
-#  RP_thx_full, RP_phx_full,
-#  RP_thy_full, RP_phy_full) = expand_probe_data_symmetric()
-
 
 def interpolate_probe_pattern(phi_fft, theta_fft):
 
@@ -289,9 +227,9 @@ print(P_dB_x.max(), P_dB_x.min())
 print(theta.min(), theta.max())
 print(phi.min(), phi.max())
 
-np.savetxt('P_DB_x.txt', E_thx,
+np.savetxt('P_DB_x.txt', P_dB_x,
            fmt='%.6f', delimiter=' ', header='phi matrix')
-np.savetxt('P_DB_y.txt', E_phx,
+np.savetxt('P_DB_y.txt', P_dB_y,
            fmt='%.6f', delimiter=' ', header='phi matrix')
 print(f"Форма S21_x: {S21_x.shape}")
 print(f"Ожидаемая форма: ({n_y}, {n_x}) = {n_y * n_x} элементов")
@@ -319,37 +257,13 @@ print(f"Форма S21_x: {S21_x_phase_norm.shape}")
 
 E_y_phase = np.degrees(np.angle(E_y))
 print(np.max(E_y_phase))
-# S21_y_norm = E_y / np.max(E_y)
 S21_y_phase_norm = E_y_phase.reshape(n_y, n_x)
 print(S21_y_phase_norm.min(), S21_y_phase_norm.max())
 print(f"Форма S21_y: {S21_y_phase_norm.shape}")
 
 # Построение
-# fig1, axes_1 = plt.subplots(1, 2, figsize=(14, 5))
 fig2, axes_2 = plt.subplots(1, 2, figsize=(14, 5))
 fig3, axes_3 = plt.subplots(1, 2, figsize=(14, 5))
-#2D диаграмма(общая)
-# im_1 = axes_1[0].imshow(P_dB,
-#                     extent=[phi.min(), phi.max(), theta.min(), theta.max()],
-#                     cmap='jet',
-#                     aspect='auto',
-#                     vmin=-40, vmax=0,
-#                     origin='lower')
-# axes_1[0].set_xlabel('Азимут φ, град')
-# axes_1[0].set_ylabel('Угол места θ, град')
-# axes_1[0].set_title('Диаграмма направленности (2D)')
-# fig1.colorbar(im_1, ax=axes_1[0], label='Усиление, дБ')
-#
-# # Срезы
-# theta_cut = theta[:, theta.shape[1] // 2]
-# P_cut_dB = P_dB[:, theta.shape[1] // 2]
-# axes_1[1].plot(theta_cut, P_cut_dB, 'b-', linewidth=2)
-# axes_1[1].set_xlabel('Угол θ, град')
-# axes_1[1].set_ylabel('Усиление, дБ')
-# axes_1[1].set_ylim(-50, 0)
-# axes_1[1].grid(True, alpha=0.3)
-# axes_1[1].set_title('Срез ДН в плоскости φ=0°')
-# fig1.suptitle('Суммарная диаграмма направленности', fontsize=14)
 print("\n=== Отладка размерностей ===")
 print(f"theta shape: {theta.shape}")
 print(f"phi shape: {phi.shape}")
