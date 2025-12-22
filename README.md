@@ -50,5 +50,6 @@
 <img width="1618" height="936" alt="image" src="https://github.com/user-attachments/assets/fe51b7b9-9069-42f5-8d7e-a3f58fc0e5d3" />
 <img width="1612" height="948" alt="image" src="https://github.com/user-attachments/assets/dc31b294-717c-4a97-ba51-039d8c5d45dc" />
 <img width="1556" height="929" alt="image" src="https://github.com/user-attachments/assets/f0d1b616-6744-4447-8c49-748505a576ec" />
-<img width="1901" height="1027" alt="image" src="https://github.com/user-attachments/assets/b836216d-9b89-4ab6-8388-86f220b8e2e3" />
-<img width="1920" height="1022" alt="image" src="https://github.com/user-attachments/assets/d296e6af-5e97-418e-9f76-f4340e3005b2" />
+<img width="1158" height="607" alt="image" src="https://github.com/user-attachments/assets/20b5930b-6197-42f6-8a71-02f3cc2b3c3c" />
+<img width="1138" height="602" alt="image" src="https://github.com/user-attachments/assets/787b1748-725f-46a5-9379-0b202f2c4d2c" />
+
