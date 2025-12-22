@@ -106,17 +106,29 @@ def calculate_angular_spectrum(E_near, dx, dy, k, z_scan=0.06):
 
     E_spectral_corrected = E_spectral * np.exp(-1j * kz * z_scan)
 
+
+    #Отображение (kx, ky) -> (θ, φ)
+    # Стандартное сферическое преобразование:
+    # kx = k * sinθ * cosφ
+    # ky = k * sinθ * sinφ
+    # kz = k * cosθ
+
     k_rho = np.sqrt(KX ** 2 + KY ** 2 + 1e-12)  # избегаем деления на 0
 
     # Угол места: θ ∈ [-90°, 90°]
+    # sinθ = k_rho / k
     sin_theta = k_rho / k
     sin_theta_clipped = np.clip(sin_theta, -1.0, 1.0)
 
-    # Вычисление угла с сохранением знака
-    theta_sign = np.sign(KY)
-    theta_rad = theta_sign * np.arcsin(sin_theta_clipped)
-    theta = theta_rad * 180 / np.pi
-    phi = np.arctan2(KY, KX) * 180 / np.pi
+    # θ ∈ [-90°, 90°] с учетом знака
+    theta_rad = np.arcsin(sin_theta_clipped) * np.sign(KY)  # или другой выбор знака
+    phi_rad = np.arctan2(KY, KX)
+    phi_rad = np.where(phi_rad > np.pi / 2, phi_rad - np.pi, phi_rad)
+    phi_rad = np.where(phi_rad < -np.pi / 2, phi_rad + np.pi, phi_rad)
+
+    # Преобразование в градусы
+    theta = np.rad2deg(theta_rad)
+    phi = np.rad2deg(phi_rad)
 
     #Сдвиг нулевой частоты в центр
     F = np.fft.fftshift(E_spectral_corrected)
@@ -130,13 +142,15 @@ def calculate_angular_spectrum(E_near, dx, dy, k, z_scan=0.06):
 F_x, theta, phi, mask = calculate_angular_spectrum(E_x, dx, dy, k)
 F_y, _, _, _ = calculate_angular_spectrum(E_y, dx, dy, k)
 
+
+np.savetxt('F_x.txt', F_x,
+           fmt='%.6f', delimiter=' ', header='phi matrix')
 plt.figure()
 plt.imshow(np.abs(F_x), extent=[phi.min(), phi.max(), theta.min(), theta.max()],
                     cmap='jet', aspect='auto')
 plt.colorbar()
 plt.title('F_x magnitude')
 plt.show()
-
 plt.figure()
 plt.imshow(np.abs(Probe_RP_theta_Xpol),  extent=[Probe_phi.min(), Probe_phi.max(), Probe_theta.min(), Probe_theta.max()],
                     cmap='jet', aspect='auto')
@@ -179,6 +193,7 @@ def interpolate_probe_pattern(phi_fft, theta_fft):
     E_thy = interp_E_thy(points_fft).reshape(phi_fft.shape)
     E_phy = interp_E_phy(points_fft).reshape(phi_fft.shape)
 
+
     return E_thx, E_phx, E_thy, E_phy
 
 E_thx, E_phx, E_thy, E_phy = interpolate_probe_pattern(phi, theta)
@@ -186,9 +201,25 @@ E_thx, E_phx, E_thy, E_phy = interpolate_probe_pattern(phi, theta)
 print(E_thx.shape, E_phx.shape)
 print(E_thy.shape, E_phy.shape)
 plt.figure()
-plt.imshow(np.abs(E_thx), aspect='auto')
+plt.imshow(np.abs(E_phx), extent=[phi.min(), phi.max(), theta.min(), theta.max()],
+                    cmap='jet', aspect='auto')
+plt.colorbar()
+plt.title('Interpolated E_phx magnitude')
+plt.figure()
+plt.imshow(np.abs(E_thx), extent=[phi.min(), phi.max(), theta.min(), theta.max()],
+                    cmap='jet', aspect='auto')
 plt.colorbar()
 plt.title('Interpolated E_thx magnitude')
+plt.figure()
+plt.imshow(np.abs(E_phy), extent=[phi.min(), phi.max(), theta.min(), theta.max()],
+                    cmap='jet', aspect='auto')
+plt.colorbar()
+plt.title('Interpolated E_phy magnitude')
+plt.figure()
+plt.imshow(np.abs(E_thy), extent=[phi.min(), phi.max(), theta.min(), theta.max()],
+                    cmap='jet', aspect='auto')
+plt.colorbar()
+plt.title('Interpolated E_thy magnitude')
 plt.show()
 # Переводим углы в радианы для вычислений
 theta_rad = np.radians(theta)
@@ -236,21 +267,18 @@ print(f"Ожидаемая форма: ({n_y}, {n_x}) = {n_y * n_x} элемен
 
 E_x_mag = np.abs(E_x)
 print(np.max(E_x_mag))
-# S21_x_norm = E_x / np.max(E_x)
 S21_x_norm = E_x_mag.reshape(n_y, n_x)
 print(S21_x_norm.min(), S21_x_norm.max())
 print(f"Форма S21_x: {S21_x_norm.shape}")
 
 E_y_mag = np.abs(E_y)
 print(np.max(E_y_mag))
-# S21_y_norm = E_y / np.max(E_y)
 S21_y_norm = E_y_mag.reshape(n_y, n_x)
 print(S21_y_norm.min(), S21_y_norm.max())
 print(f"Форма S21_y: {S21_y_norm.shape}")
 
 E_x_phase = np.degrees(np.angle(E_x))
 print(np.max(E_x_phase))
-# S21_x_norm = E_x / np.max(E_x)
 S21_x_phase_norm = E_x_phase.reshape(n_y, n_x)
 print(S21_x_phase_norm.min(), S21_x_phase_norm.max())
 print(f"Форма S21_x: {S21_x_phase_norm.shape}")
@@ -275,9 +303,10 @@ print(theta.min(), theta.max())
 print(phi.min(), phi.max())
 print(P_dB_x.shape)
 print(P_dB_y.shape)
+desired_phi_range = [-180, 180]
 # 2D диаграмма (Кросс)
 im_2 = axes_2[0].imshow(P_dB_x,
-                    extent=[phi.min(), phi.max(), theta.min(), theta.max()],
+                    extent=[desired_phi_range[0], desired_phi_range[1], theta.min(), theta.max()],
                     cmap='jet',
                     aspect='auto',
                     vmin=-40, vmax=0,
@@ -300,7 +329,7 @@ fig2.suptitle('Кросс диаграмма направленности', font
 
 # 2D диаграмма (основная поляризация)
 im_3 = axes_3[0].imshow(P_dB_y,
-                    extent=[phi.min(), phi.max(), theta.min(), theta.max()],
+                    extent=[desired_phi_range[0], desired_phi_range[1], theta.min(), theta.max()],
                     cmap='jet',
                     aspect='auto',
                     vmin=-40, vmax=0,
